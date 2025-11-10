@@ -34,15 +34,21 @@
     <ItemGroup>
       <None Include="..\..\TeleFrame.png">
         <Pack>True</Pack>
-        <PackagePath></PackagePath>
+        <PackagePath> </PackagePath>
         <Link>TeleFrame.png</Link>
       </None>
 
         <None Include="..\..\README.md">
             <Pack>True</Pack>
-            <PackagePath></PackagePath>
+            <PackagePath> </PackagePath>
             <Link>README.md</Link>
         </None>
+        <None Include="..\..\LICENCE">
+            <Pack>True</Pack>
+            <PackagePath> </PackagePath>
+            <Link>LICENCE</Link>
+        </None>
+        
     </ItemGroup>
 
 </Project>
