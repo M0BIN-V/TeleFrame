@@ -4,6 +4,16 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <Title>TeleFrame</Title>
+        <PackageId>TeleFrame</PackageId>
+        <Description> </Description>
+        <RepositoryUrl>https://github.com/M0BIN-V/TeleFrame</RepositoryUrl>
+        <Version>1.0.0</Version>
+        <PackageIcon>TeleFrame.png</PackageIcon>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageLicenseFile>LICENCE</PackageLicenseFile>
+        <PackageTags>TeleFrame ; Telegram ; Bot </PackageTags>
+        <PackageProjectUrl>https://github.com/M0BIN-V/TeleFrame</PackageProjectUrl>
     </PropertyGroup>
 
     <ItemGroup>
@@ -19,6 +29,20 @@
         <Reference Include="Microsoft.Extensions.Hosting.Abstractions">
             <HintPath>C:\Program Files\dotnet\shared\Microsoft.AspNetCore.App\9.0.10\Microsoft.Extensions.Hosting.Abstractions.dll</HintPath>
         </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Include="..\..\TeleFrame.png">
+        <Pack>True</Pack>
+        <PackagePath></PackagePath>
+        <Link>TeleFrame.png</Link>
+      </None>
+
+        <None Include="..\..\README.md">
+            <Pack>True</Pack>
+            <PackagePath></PackagePath>
+            <Link>README.md</Link>
+        </None>
     </ItemGroup>
 
 </Project>
