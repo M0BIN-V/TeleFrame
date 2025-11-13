@@ -1,5 +1,3 @@
-using TeleFrame.Services;
-
 namespace TeleFrame.Middlewares.Abstractions;
 
 public interface IUpdateMiddleware

@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using TeleFrame.Middlewares.Abstractions;
 
 namespace TeleFrame.Application;

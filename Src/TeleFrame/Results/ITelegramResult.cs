@@ -1,5 +1,3 @@
-using TeleFrame.Services;
-
 namespace TeleFrame.Results;
 
 public interface ITelegramResult

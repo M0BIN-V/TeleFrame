@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace TeleFrame.Options;
 
@@ -14,7 +13,7 @@ internal static class Options
         /// <param name="configuration">configuration</param>
         /// <typeparam name="TOptions">options type</typeparam>
         /// <returns></returns>
-        public IServiceCollection BindOptions<TOptions>(IConfiguration configuration) 
+        public IServiceCollection BindOptions<TOptions>(IConfiguration configuration)
             where TOptions : class
         {
             services.AddOptions<TOptions>()

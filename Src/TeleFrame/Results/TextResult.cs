@@ -1,6 +1,3 @@
-using TeleFrame.Services;
-using Telegram.Bot.Requests;
-
 namespace TeleFrame.Results;
 
 public class TextResult(string message, ChatId? chatId = null, CancellationToken ct = default) : MessageResult(ct)

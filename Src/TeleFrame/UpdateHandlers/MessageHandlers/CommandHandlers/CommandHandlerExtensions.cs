@@ -1,5 +1,3 @@
-using Telegram.Bot.Types.Enums;
-
 namespace TeleFrame.UpdateHandlers.MessageHandlers.CommandHandlers;
 
 public static class CommandHandlerExtensions

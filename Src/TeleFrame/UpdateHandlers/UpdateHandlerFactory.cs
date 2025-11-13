@@ -1,9 +1,7 @@
 using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using System.Reflection;
-using Microsoft.Extensions.DependencyInjection;
 using TeleFrame.Results;
-using TeleFrame.Services;
 
 namespace TeleFrame.UpdateHandlers;
 

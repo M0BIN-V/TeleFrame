@@ -1,6 +1,3 @@
-using TeleFrame.Services;
-using Telegram.Bot.Requests;
-
 namespace TeleFrame.Results;
 
 public abstract class MessageResult(CancellationToken ct = default) : ITelegramResult

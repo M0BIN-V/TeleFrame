@@ -1,6 +1,4 @@
-using Microsoft.Extensions.DependencyInjection;
 using TeleFrame.Middlewares.Abstractions;
-using TeleFrame.Services;
 
 namespace TeleFrame.Application;
 
@@ -11,7 +9,7 @@ internal class UpdateProcessor(
     public async Task ProcessAsync(IAsyncEnumerable<Update> updates, CancellationToken ct)
     {
         var logger = services.GetRequiredService<ILogger<UpdateProcessor>>();
-        
+
         await foreach (var update in updates.WithCancellation(ct))
             try
             {
