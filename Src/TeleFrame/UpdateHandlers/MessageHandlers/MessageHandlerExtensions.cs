@@ -12,9 +12,8 @@ public static class MessageHandlerExtensions
 
             app.MapUpdate(u =>
                     u.Update.Type == UpdateType.Message &&
-                    u.Update.Message!.Text != null &&
                     u.Services.GetRequiredService<IStateManager>().StateIs(builder.RequireStateText) &&
-                    predicate(u.Update.Message),
+                    predicate(u.Update.Message!),
                 (context, ct) => builder.Build().Invoke(context, ct));
 
             return builder;
