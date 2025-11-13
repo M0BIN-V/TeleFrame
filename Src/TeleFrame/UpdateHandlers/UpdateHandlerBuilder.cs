@@ -1,6 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
-using TeleFrame.Services;
-
 namespace TeleFrame.UpdateHandlers;
 
 public delegate Task UpdateHandlerFilterDelegate(UpdateContext context, CancellationToken ct);

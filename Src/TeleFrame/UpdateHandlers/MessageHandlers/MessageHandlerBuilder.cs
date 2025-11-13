@@ -1,8 +1,8 @@
-namespace TeleFrame.UpdateHandlers.CommandHandlers;
+namespace TeleFrame.UpdateHandlers.MessageHandlers;
 
-public class CommandHandlerBuilder : UpdateHandlerBuilder
+public class MessageHandlerBuilder : UpdateHandlerBuilder
 {
-    public CommandHandlerBuilder(UpdateHandlerDelegate handler) : base(handler) { }
+    public MessageHandlerBuilder(UpdateHandlerDelegate handler) : base(handler) { }
 
     public string RequireStateText { get; private set; } = "";
 

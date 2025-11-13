@@ -6,6 +6,7 @@ global using System.Threading;
 global using System.Threading.Tasks;
 global using Microsoft.Extensions.Logging;
 global using Microsoft.Extensions.DependencyInjection;
+global using TeleFrame.Application;
 global using TeleFrame.Options;
 global using TeleFrame.UpdateHandlers;
 global using TeleFrame.Services;
