@@ -7,7 +7,7 @@ public class MessageHandlerBuilder : UpdateHandlerBuilder
     public string RequireStateText { get; private set; } = "";
 
 
-    public UpdateHandlerBuilder RequireState(string state)
+    public MessageHandlerBuilder RequireState(string state)
     {
         RequireStateText = state;
         return this;
