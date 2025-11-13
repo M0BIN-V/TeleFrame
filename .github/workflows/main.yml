@@ -1,36 +1,39 @@
-  name: Publish NuGet Package
+name: Publish NuGet Package
   
-  on:
-    push:
-      branches:
-        - master
+on:
+  push:
+    branches:
+      - master
   
-  jobs:
-    build:
-      runs-on: ubuntu-latest
+jobs:
+  build:
+    runs-on: ubuntu-latest
   
-      steps:
-        - name: Checkout code
-          uses: actions/checkout@v2
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
   
-        - name: Setup .NET
-          uses: actions/setup-dotnet@v2
-          with:
-            dotnet-version: '10.x'
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '10.x'
   
-        - name: Restore dependencies 
-          run: dotnet restore 
+      - name: Restore library project
+        run: dotnet restore Src/TeleFrame/TeleFrame.csproj
   
-        - name: Build the project
-          run: dotnet build  --configuration Release --no-restore
+      - name: Restore test project
+        run: dotnet restore tests/TeleFrame.Tests/TeleFrame.Tests.csproj || true
   
-        - name: Run tests
-          run: dotnet test --configuration Release --no-build --logger "trx;LogFileName=test_results.trx"
+      - name: Build the library project
+        run: dotnet build Src/TeleFrame/TeleFrame.csproj --configuration Release --no-restore
   
-        - name: Pack the project
-          run: dotnet pack  --configuration Release --no-build --output ./nupkg
+      - name: Run tests
+        run: dotnet test tests/TeleFrame.Tests/TeleFrame.Tests.csproj --configuration Release --no-build --logger "trx;LogFileName=test_results.trx"
   
-        - name: Publish to NuGet
-          env:
-            NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-          run: dotnet nuget push ./nupkg/*.nupkg --api-key $NUGET_API_KEY --source https://api.nuget.org/v3/index.json
+      - name: Pack the library project
+        run: dotnet pack Src/TeleFrame/TeleFrame.csproj --configuration Release --no-build --output ./nupkg
+  
+      - name: Publish to NuGet
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: dotnet nuget push ./nupkg/*.nupkg --api-key $NUGET_API_KEY --source https://api.nuget.org/v3/index.json
