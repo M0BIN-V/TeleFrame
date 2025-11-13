@@ -31,7 +31,7 @@ jobs:
         run: dotnet test Tests/TeleFrame.Tests/TeleFrame.Tests.csproj --configuration Release --logger "trx;LogFileName=test_results.trx" --verbosity normal
   
       - name: Upload test results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test-results
           path: Tests/TeleFrame.Tests/TestResults/test_results.trx
