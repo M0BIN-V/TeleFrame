@@ -38,7 +38,7 @@ public static class UpdateHandlerFactory
     static List<Expression> BuildArguments(ParameterInfo[] parameters, ParameterExpression contextParam,
         ParameterExpression ctParam)
     {
-        var args = new List<Expression>();
+        var args = new List<Expression>(parameters.Length);
 
         foreach (var param in parameters)
             if (param.ParameterType == typeof(UpdateContext))
@@ -56,12 +56,14 @@ public static class UpdateHandlerFactory
         var servicesProp = Expression.Property(contextParam, nameof(UpdateContext.Services));
 
         var getService = typeof(ServiceProviderServiceExtensions)
-            .GetMethods()
-            .Single(m => m is
-            {
-                Name: nameof(ServiceProviderServiceExtensions.GetRequiredService),
-                IsGenericMethodDefinition: true
-            } && m.GetParameters().Length == 1)
+            .GetMethods(BindingFlags.Public | BindingFlags.Static)
+            .Single(m =>
+                m is
+                {
+                    Name: nameof(ServiceProviderServiceExtensions.GetRequiredService),
+                    IsGenericMethodDefinition: true
+                } &&
+                m.GetParameters().Length == 1)
             .MakeGenericMethod(param.ParameterType);
 
         return Expression.Call(getService, servicesProp);
@@ -69,11 +71,15 @@ public static class UpdateHandlerFactory
 
     static Expression WrapReturnValue(Expression call, Type returnType, ParameterExpression contextParam)
     {
+        // void -> Task.CompletedTask
         if (returnType == typeof(void))
-            return Expression.Block(call, Expression.Property(null, typeof(Task), nameof(Task.CompletedTask)));
+            return Expression.Block(call, Expression.Constant(Task.CompletedTask));
+        
+        // Task
+        if (returnType == typeof(Task))
+            return call;
 
-        if (returnType == typeof(Task)) return call;
-
+        // Task<T>
         if (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
         {
             var innerType = returnType.GetGenericArguments()[0];
@@ -88,13 +94,16 @@ public static class UpdateHandlerFactory
             else
                 throw new InvalidOperationException($"Return type Task<{innerType.Name}> is not supported.");
 
+            // t => t.ContinueWith(...)
             var taskParam = Expression.Parameter(returnType, "t");
-            var sendCall = Expression.Call(sendAsyncMethod, contextParam, Expression.Property(taskParam, "Result"));
+            var resultAccess = Expression.Property(taskParam, nameof(Task<>.Result));
+            var sendCall = Expression.Call(sendAsyncMethod, contextParam, Expression.Convert(resultAccess, innerType));
             var contLambda = Expression.Lambda(sendCall, taskParam);
 
             return Expression.Call(call, nameof(Task.ContinueWith), Type.EmptyTypes, contLambda);
         }
 
+        // string
         if (returnType == typeof(string))
         {
             var sendAsync = typeof(Extensions)
@@ -102,8 +111,12 @@ public static class UpdateHandlerFactory
             return Expression.Call(sendAsync, contextParam, call);
         }
 
-        if (typeof(ITelegramResult).IsAssignableFrom(returnType) &&
-            returnType is { IsAbstract: false, IsInterface: false })
+        // ITelegramResult
+        if (typeof(ITelegramResult).IsAssignableFrom(returnType) && returnType is
+            {
+                IsInterface: false,
+                IsAbstract: false
+            })
         {
             var sendAsync = typeof(Extensions)
                 .GetMethod(nameof(Extensions.SendResultAsync), BindingFlags.Static | BindingFlags.Public)!;
