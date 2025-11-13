@@ -69,32 +69,48 @@ public static class UpdateHandlerFactory
 
     static Expression WrapReturnValue(Expression call, Type returnType, ParameterExpression contextParam)
     {
-        if (typeof(Task).IsAssignableFrom(returnType))
-            return call;
+        if (returnType == typeof(void))
+            return Expression.Block(call, Expression.Property(null, typeof(Task), nameof(Task.CompletedTask)));
+
+        if (returnType == typeof(Task)) return call;
+
+        if (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
+        {
+            var innerType = returnType.GetGenericArguments()[0];
+            MethodInfo sendAsyncMethod;
+
+            if (innerType == typeof(string))
+                sendAsyncMethod = typeof(Extensions)
+                    .GetMethod(nameof(Extensions.SendTextAsync), BindingFlags.Static | BindingFlags.Public)!;
+            else if (typeof(ITelegramResult).IsAssignableFrom(innerType))
+                sendAsyncMethod = typeof(Extensions)
+                    .GetMethod(nameof(Extensions.SendResultAsync), BindingFlags.Static | BindingFlags.Public)!;
+            else
+                throw new InvalidOperationException($"Return type Task<{innerType.Name}> is not supported.");
+
+            var taskParam = Expression.Parameter(returnType, "t");
+            var sendCall = Expression.Call(sendAsyncMethod, contextParam, Expression.Property(taskParam, "Result"));
+            var contLambda = Expression.Lambda(sendCall, taskParam);
+
+            return Expression.Call(call, nameof(Task.ContinueWith), Type.EmptyTypes, contLambda);
+        }
 
         if (returnType == typeof(string))
         {
             var sendAsync = typeof(Extensions)
                 .GetMethod(nameof(Extensions.SendTextAsync), BindingFlags.Static | BindingFlags.Public)!;
-            var sendCall = Expression.Call(sendAsync, contextParam, call);
-            return sendCall;
+            return Expression.Call(sendAsync, contextParam, call);
         }
 
-        if (returnType.IsAssignableTo(typeof(ITelegramResult)) &&
-            returnType is
-            {
-                IsAbstract: false,
-                IsInterface: false
-            })
+        if (typeof(ITelegramResult).IsAssignableFrom(returnType) &&
+            returnType is { IsAbstract: false, IsInterface: false })
         {
             var sendAsync = typeof(Extensions)
                 .GetMethod(nameof(Extensions.SendResultAsync), BindingFlags.Static | BindingFlags.Public)!;
-            var sendCall = Expression.Call(sendAsync, contextParam, call);
-            return sendCall;
+            return Expression.Call(sendAsync, contextParam, call);
         }
 
-        var completed = Expression.Property(null, typeof(Task), nameof(Task.CompletedTask));
-        return Expression.Block(call, completed);
+        throw new InvalidOperationException($"Return type {returnType.Name} is not supported.");
     }
 }
 
@@ -102,8 +118,7 @@ public static class Extensions
 {
     public static Task SendTextAsync(UpdateContext context, string text)
     {
-        var chatId = context.Update.Message?.Chat.Id ?? 0;
-        return context.Services.GetRequiredService<ITelegramBotClient>().SendMessage(chatId, text);
+        return new TextResult(text).InvokeAsync(context);
     }
 
     public static Task SendResultAsync(UpdateContext context, ITelegramResult result)
