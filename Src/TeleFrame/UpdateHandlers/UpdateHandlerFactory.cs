@@ -25,8 +25,7 @@ public static class UpdateHandlerFactory
         var ctParam = Expression.Parameter(typeof(CancellationToken), "ct");
 
         var args = BuildArguments(parameters, contextParam, ctParam);
-
-        var instance = handler.Target is not null ? Expression.Constant(handler.Target) : null;
+        var instance = handler.Target != null ? Expression.Constant(handler.Target) : null;
         var call = Expression.Call(instance, method, args);
 
         var body = WrapReturnValue(call, method.ReturnType, contextParam);
@@ -71,10 +70,10 @@ public static class UpdateHandlerFactory
 
     static Expression WrapReturnValue(Expression call, Type returnType, ParameterExpression contextParam)
     {
-        // void -> Task.CompletedTask
+        // void
         if (returnType == typeof(void))
             return Expression.Block(call, Expression.Constant(Task.CompletedTask));
-        
+
         // Task
         if (returnType == typeof(Task))
             return call;
@@ -83,43 +82,31 @@ public static class UpdateHandlerFactory
         if (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
         {
             var innerType = returnType.GetGenericArguments()[0];
-            MethodInfo sendAsyncMethod;
 
             if (innerType == typeof(string))
-                sendAsyncMethod = typeof(Extensions)
-                    .GetMethod(nameof(Extensions.SendTextAsync), BindingFlags.Static | BindingFlags.Public)!;
-            else if (typeof(ITelegramResult).IsAssignableFrom(innerType))
-                sendAsyncMethod = typeof(Extensions)
-                    .GetMethod(nameof(Extensions.SendResultAsync), BindingFlags.Static | BindingFlags.Public)!;
-            else
-                throw new InvalidOperationException($"Return type Task<{innerType.Name}> is not supported.");
+            {
+                var sendAsync = typeof(Extensions).GetMethod(nameof(Extensions.SendTextTaskAsync))!;
+                return Expression.Call(sendAsync, contextParam, call);
+            }
 
-            // t => t.ContinueWith(...)
-            var taskParam = Expression.Parameter(returnType, "t");
-            var resultAccess = Expression.Property(taskParam, nameof(Task<>.Result));
-            var sendCall = Expression.Call(sendAsyncMethod, contextParam, Expression.Convert(resultAccess, innerType));
-            var contLambda = Expression.Lambda(sendCall, taskParam);
-
-            return Expression.Call(call, nameof(Task.ContinueWith), Type.EmptyTypes, contLambda);
+            if (typeof(ITelegramResult).IsAssignableFrom(innerType))
+            {
+                var sendAsync = typeof(Extensions).GetMethod(nameof(Extensions.SendResultTaskAsync))!;
+                return Expression.Call(sendAsync, contextParam, call);
+            }
         }
 
         // string
         if (returnType == typeof(string))
         {
-            var sendAsync = typeof(Extensions)
-                .GetMethod(nameof(Extensions.SendTextAsync), BindingFlags.Static | BindingFlags.Public)!;
+            var sendAsync = typeof(Extensions).GetMethod(nameof(Extensions.SendTextAsync))!;
             return Expression.Call(sendAsync, contextParam, call);
         }
 
         // ITelegramResult
-        if (typeof(ITelegramResult).IsAssignableFrom(returnType) && returnType is
-            {
-                IsInterface: false,
-                IsAbstract: false
-            })
+        if (typeof(ITelegramResult).IsAssignableFrom(returnType) && !returnType.IsInterface && !returnType.IsAbstract)
         {
-            var sendAsync = typeof(Extensions)
-                .GetMethod(nameof(Extensions.SendResultAsync), BindingFlags.Static | BindingFlags.Public)!;
+            var sendAsync = typeof(Extensions).GetMethod(nameof(Extensions.SendResultAsync))!;
             return Expression.Call(sendAsync, contextParam, call);
         }
 
@@ -134,8 +121,20 @@ public static class Extensions
         return new TextResult(text).InvokeAsync(context);
     }
 
-    public static Task SendResultAsync(UpdateContext context, ITelegramResult result)
+    public static async Task SendTextTaskAsync(UpdateContext context, Task<string> text)
     {
-        return result.InvokeAsync(context);
+        var awaited = await text;
+        await new TextResult(awaited).InvokeAsync(context);
+    }
+
+    public static async Task SendResultAsync(UpdateContext context, ITelegramResult result)
+    {
+        await result.InvokeAsync(context);
+    }
+
+    public static async Task SendResultTaskAsync(UpdateContext context, Task<ITelegramResult> result)
+    {
+        var awaited = await result;
+        await awaited.InvokeAsync(context);
     }
 }
