@@ -28,7 +28,13 @@ jobs:
         run: dotnet build Src/TeleFrame/TeleFrame.csproj --configuration Release --no-restore
   
       - name: Run tests
-        run: dotnet test Tests/TeleFrame.Tests/TeleFrame.Tests.csproj --configuration Release --no-build --logger "trx;LogFileName=test_results.trx"
+        run: dotnet test Tests/TeleFrame.Tests/TeleFrame.Tests.csproj --configuration Release --logger "trx;LogFileName=test_results.trx" --verbosity normal
+  
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: Tests/TeleFrame.Tests/TestResults/test_results.trx
   
       - name: Pack the library project
         run: dotnet pack Src/TeleFrame/TeleFrame.csproj --configuration Release --no-build --output ./nupkg
