@@ -8,7 +8,7 @@
         <PackageId>TeleFrame</PackageId>
         <Description> </Description>
         <RepositoryUrl>https://github.com/M0BIN-V/TeleFrame</RepositoryUrl>
-        <Version>1.1.2</Version>
+        <Version>1.1.3</Version>
         <PackageIcon>TeleFrame.png</PackageIcon>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageLicenseFile>LICENCE</PackageLicenseFile>
@@ -32,18 +32,18 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Include="..\..\TeleFrame.png">
+      <None Include="..\\..\\TeleFrame.png">
         <Pack>True</Pack>
         <PackagePath> </PackagePath>
         <Link>TeleFrame.png</Link>
       </None>
 
-        <None Include="..\..\README.md">
+        <None Include="..\\..\\README.md">
             <Pack>True</Pack>
             <PackagePath> </PackagePath>
             <Link>README.md</Link>
         </None>
-        <None Include="..\..\LICENCE">
+        <None Include="..\\..\\LICENCE">
             <Pack>True</Pack>
             <PackagePath> </PackagePath>
             <Link>LICENCE</Link>
