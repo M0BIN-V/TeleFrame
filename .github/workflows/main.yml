@@ -22,13 +22,13 @@ jobs:
         run: dotnet restore Src/TeleFrame/TeleFrame.csproj
   
       - name: Restore test project
-        run: dotnet restore tests/TeleFrame.Tests/TeleFrame.Tests.csproj || true
+        run: dotnet restore Tests/TeleFrame.Tests/TeleFrame.Tests.csproj || true
   
       - name: Build the library project
         run: dotnet build Src/TeleFrame/TeleFrame.csproj --configuration Release --no-restore
   
       - name: Run tests
-        run: dotnet test tests/TeleFrame.Tests/TeleFrame.Tests.csproj --configuration Release --no-build --logger "trx;LogFileName=test_results.trx"
+        run: dotnet test Tests/TeleFrame.Tests/TeleFrame.Tests.csproj --configuration Release --no-build --logger "trx;LogFileName=test_results.trx"
   
       - name: Pack the library project
         run: dotnet pack Src/TeleFrame/TeleFrame.csproj --configuration Release --no-build --output ./nupkg
