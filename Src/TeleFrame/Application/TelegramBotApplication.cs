@@ -5,7 +5,7 @@ using Telegram.Bot.Polling;
 
 namespace TeleFrame.Application;
 
-public class TelegramBotApplication : IHost
+public partial class TelegramBotApplication : IHost
 {
     readonly ITelegramBotClient _client;
     readonly IHost _host;
@@ -35,7 +35,7 @@ public class TelegramBotApplication : IHost
 
     public async Task StartAsync(CancellationToken cancellationToken = new())
     {
-        _logger.LogInformation("Telegram bot starting...");
+        LogTelegramBotStarting();
 
         var pipeline = _middlewareRegistry.Build();
         var processor = new UpdateProcessor(Services, pipeline);
@@ -51,6 +51,7 @@ public class TelegramBotApplication : IHost
         );
 
         var me = await _client.GetMe(cancellationToken);
+        
         _logger.LogInformation("Bot started receiving from {UserName}", me.Username);
 
         await _host.WaitForShutdownAsync(cancellationToken);
@@ -84,4 +85,7 @@ public class TelegramBotApplication : IHost
         _logger.LogError(ex, "Telegram error");
         return Task.CompletedTask;
     }
+
+    [LoggerMessage(LogLevel.Information, "Telegram bot starting...")]
+    partial void LogTelegramBotStarting();
 }
