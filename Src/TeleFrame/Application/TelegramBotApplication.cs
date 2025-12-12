@@ -10,18 +10,20 @@ public partial class TelegramBotApplication : IHost
     readonly ITelegramBotClient _client;
     readonly IHost _host;
     readonly ILogger<TelegramBotApplication> _logger;
-    readonly int _maxDegreeOfParallelism;
     readonly MiddlewareRegistry _middlewareRegistry = new();
     readonly ReceiverOptions _receiverOptions;
     readonly UpdateChannel _updateChannel = new();
+    readonly ProcessingOptions _processingOptions;
 
-    public TelegramBotApplication(IHost host, ReceiverOptions receiverOptions, int maxDegreeOfParallelism = 5)
+    public TelegramBotApplication(
+        IHost host, ReceiverOptions receiverOptions,
+        ProcessingOptions processingOptions)
     {
         _receiverOptions = receiverOptions;
+        _processingOptions = processingOptions;
         _host = host;
         _logger = _host.Services.GetRequiredService<ILogger<TelegramBotApplication>>();
         _client = _host.Services.GetRequiredService<ITelegramBotClient>();
-        _maxDegreeOfParallelism = maxDegreeOfParallelism;
     }
 
     public IConfiguration Configuration => _host.Services.GetRequiredService<IConfiguration>();
@@ -40,7 +42,7 @@ public partial class TelegramBotApplication : IHost
         var pipeline = _middlewareRegistry.Build();
         var processor = new UpdateProcessor(Services, pipeline);
 
-        for (var i = 0; i < _maxDegreeOfParallelism; i++)
+        for (var i = 0; i < _processingOptions.WorkerCount; i++)
             _ = Task.Run(() => processor.ProcessAsync(_updateChannel.Reader, cancellationToken), cancellationToken);
 
         _client.StartReceiving(

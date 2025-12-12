@@ -10,6 +10,13 @@ namespace TeleFrame.ApplicationBuilder;
 public class TelegramBotApplicationBuilder : IHostApplicationBuilder
 {
     readonly HostApplicationBuilder _hostBuilder;
+
+    readonly ProcessingOptions _processingOptions = new()
+    {
+        WorkerCount = System.Environment.ProcessorCount * 2,
+        QueueCapacity = System.Environment.ProcessorCount * 2 * 4
+    };
+
     readonly ReceiverOptions _receiverOptions = new() { DropPendingUpdates = true };
 
     public TelegramBotApplicationBuilder(string[] args)
@@ -52,8 +59,14 @@ public class TelegramBotApplicationBuilder : IHostApplicationBuilder
         return this;
     }
 
+    public TelegramBotApplicationBuilder ProcessingOptions(Action<ProcessingOptions> config)
+    {
+        config(_processingOptions);
+        return this;
+    }
+
     public TelegramBotApplication Build()
     {
-        return new TelegramBotApplication(_hostBuilder.Build(), _receiverOptions);
+        return new TelegramBotApplication(_hostBuilder.Build(), _receiverOptions, _processingOptions);
     }
 }
