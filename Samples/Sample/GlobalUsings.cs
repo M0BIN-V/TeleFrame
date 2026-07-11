@@ -1,0 +1,10 @@
+global using System.Text.RegularExpressions;
+global using Microsoft.Extensions.Hosting;
+global using TeleFrame.ApplicationBuilder;
+global using TeleFrame.Results;
+global using TeleFrame.Services;
+global using TeleFrame.Services.StateManager;
+global using TeleFrame.UpdateHandlers.MessageHandlers;
+global using TeleFrame.UpdateHandlers.MessageHandlers.CommandHandlers;
+global using Telegram.Bot;
+global using Telegram.Bot.Types.Enums;

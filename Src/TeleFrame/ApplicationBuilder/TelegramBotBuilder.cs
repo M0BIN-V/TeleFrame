@@ -7,7 +7,7 @@ using Telegram.Bot.Polling;
 
 namespace TeleFrame.ApplicationBuilder;
 
-public class TelegramBotApplicationBuilder : IHostApplicationBuilder
+public class TelegramBotBuilder : IHostApplicationBuilder
 {
     readonly HostApplicationBuilder _hostBuilder;
 
@@ -19,11 +19,12 @@ public class TelegramBotApplicationBuilder : IHostApplicationBuilder
 
     readonly ReceiverOptions _receiverOptions = new() { DropPendingUpdates = true };
 
-    public TelegramBotApplicationBuilder(string[] args)
+    public TelegramBotBuilder(string[] args , string configFileName = "botConfig.json")
     {
         _hostBuilder = Host.CreateApplicationBuilder(args);
 
-        _hostBuilder.Configuration.AddJsonFile("appsettings.json", true, true);
+        _hostBuilder.Configuration.AddJsonFile(configFileName, true, true);
+        _hostBuilder.Configuration.AddUserSecrets(System.Reflection.Assembly.GetEntryAssembly()!);
 
         RegisterServices();
     }
@@ -53,13 +54,13 @@ public class TelegramBotApplicationBuilder : IHostApplicationBuilder
         Services.AddMemoryCache();
     }
 
-    public TelegramBotApplicationBuilder ConfigureReceiver(Action<ReceiverOptions> config)
+    public TelegramBotBuilder ConfigureReceiver(Action<ReceiverOptions> config)
     {
         config(_receiverOptions);
         return this;
     }
 
-    public TelegramBotApplicationBuilder ProcessingOptions(Action<ProcessingOptions> config)
+    public TelegramBotBuilder ProcessingOptions(Action<ProcessingOptions> config)
     {
         config(_processingOptions);
         return this;

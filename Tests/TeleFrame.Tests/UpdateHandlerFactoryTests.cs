@@ -1,4 +1,5 @@
 using TeleFrame.Results;
+using TeleFrame.Results.Abstractions;
 
 namespace TeleFrame.Tests;
 

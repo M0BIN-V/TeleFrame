@@ -1,4 +1,4 @@
-namespace TeleFrame.Results;
+namespace TeleFrame.Results.Abstractions;
 
 public abstract class MessageResult(CancellationToken ct = default) : ITelegramResult
 {

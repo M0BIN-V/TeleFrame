@@ -1,4 +1,4 @@
-namespace TeleFrame.Results;
+namespace TeleFrame.Results.Abstractions;
 
 public interface ITelegramResult
 {

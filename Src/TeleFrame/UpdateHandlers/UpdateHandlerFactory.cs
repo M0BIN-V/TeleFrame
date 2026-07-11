@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using System.Reflection;
 using TeleFrame.Results;
+using TeleFrame.Results.Abstractions;
 
 namespace TeleFrame.UpdateHandlers;
 
