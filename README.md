@@ -1,586 +1,473 @@
-# TeleFrame
+# 🚀 TeleFrame
 
-A modern, lightweight .NET framework for building Telegram bots with a fluent API and middleware pipeline architecture. Built on top of [Telegram.Bot](https://github.com/TelegramBots/Telegram.Bot), TeleFrame provides an intuitive way to handle Telegram updates, manage conversation state, and build complex bot workflows.
+> Build Telegram Bots in .NET with the simplicity of Minimal APIs.
 
-## 📋 Table of Contents
+[![NuGet](https://img.shields.io/nuget/v/TeleFrame.svg)]()
+[![Downloads](https://img.shields.io/nuget/dt/TeleFrame.svg)]()
 
-- [Features](#features)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Core Concepts](#core-concepts)
-- [Usage Guide](#usage-guide)
-  - [Basic Setup](#basic-setup)
-  - [Handling Updates](#handling-updates)
-  - [Message Handlers](#message-handlers)
-  - [Command Handlers](#command-handlers)
-  - [Voice Handlers](#voice-handlers)
-  - [State Management](#state-management)
-  - [Middleware](#middleware)
-  - [Sending Results](#sending-results)
-- [Configuration](#configuration)
-- [Advanced Features](#advanced-features)
-- [Examples](#examples)
-- [License](#license)
 
-## ✨ Features
+TeleFrame is a lightweight Telegram Bot Framework for .NET that brings
+Dependency Injection, Middleware, Filters, Routing, and State Management
+to Telegram bot development.
 
-- **Fluent API**: Intuitive builder pattern for registering handlers
-- **Middleware Pipeline**: Process updates through a customizable middleware chain
-- **State Management**: Built-in memory-based state manager for handling conversation state
-- **Type-Safe Handlers**: Lambda-based handlers with full IntelliSense support
-- **Update Filtering**: Predicate-based filtering for precise control over update routing
-- **Multiple Update Types**: Handle messages, commands, voice, and custom updates
-- **Dependency Injection**: Full Microsoft.Extensions.DependencyInjection integration
-- **Configuration Support**: Seamless integration with Microsoft.Extensions.Configuration
-- **Async Processing**: Non-blocking update processing with configurable worker threads
-- **Logging**: Built-in logging support via Microsoft.Extensions.Logging
+Instead of dealing with large update switch statements and repetitive Telegram Bot API boilerplate, TeleFrame lets you define commands, messages, update handlers, middleware, filters, and conversation states using a clean and familiar developer experience.
 
-## 📦 Installation
-
-### Via NuGet Package Manager
-
-```bash
-Install-Package TeleFrame
+```csharp
+bot.MapCommand("/start", () => "Welcome to TeleFrame!");
 ```
 
-### Via .NET CLI
+---
+
+## 📚 Table of Contents
+
+- [📦 Installation](#Installation)
+- [🚀 Quick Start](#Quick-Start)
+- [💉 Dependency Injection](#Dependency-Injection)
+- [⌨️ Commands](#Commands)
+    - [Returning Plain Text](#returning-plain-text)
+    - [Returning a Telegram Response](#returning-a-telegram-response)
+    - [Using UpdateContext](#using-updatecontext)
+- [💬 Message Handlers](#Message-Handlers)
+- [🎙️ Voice Messages](#voice-messages)
+- [🔄 Update Handlers](#update-handlers)
+- [🛠️ Middleware](#Middleware)
+    - [Register Middleware](#register-middleware)
+    - [Inline Middleware](#inline-middleware)
+    - [Custom Middleware](#custom-middleware)
+- [🛡️ Filters](#filters)
+    - [Creating a Filter](#creating-a-filter)
+    - [Applying a Filter](#applying-a-filter)
+- [🧠 State Management](#state-management)
+    - [Set State](#set-state)
+    - [Require State](#require-state)
+    - [Clear State](#clear-state)
+- [📌 UpdateContext](#updatecontext)
+- [📨 Results API](#results-api)
+- [📋 Logging](#logging)
+- [🎯 Example Application](#example-application)
+- [🤔 Why TeleFrame?](#why-teleframe)
+- [🗺️ Roadmap](#roadmap)
+- [🤝 Contributing](#contributing)
+- [📄 License](#license)
+
+---
+
+# Installation
+
+Install the package from NuGet:
 
 ```bash
 dotnet add package TeleFrame
 ```
 
-## 🚀 Quick Start
+---
 
-Here's a minimal bot that responds to `/start` command:
+# Quick Start
 
-```csharp
-using TeleFrame;
-using TeleFrame.ApplicationBuilder;
-
-var builder = new TelegramBotApplicationBuilder(args);
-
-var app = builder.Build();
-
-app.MapUpdate(u => u.Update.Type == UpdateType.Message, async (context, ct) =>
-{
-    if (context.Update.Message?.Text == "/start")
-    {
-        await context.Client.SendTextMessageAsync(
-            context.Update.Message.Chat.Id,
-            "Hello! I'm your bot.",
-            cancellationToken: ct);
-    }
-});
-
-await app.RunAsync();
-```
-
-## 🎯 Core Concepts
-
-### UpdateContext
-
-The `UpdateContext` is passed to every handler and contains:
-
-- **Update**: The Telegram update object with all its data
-- **Client**: The ITelegramBotClient for sending messages
-- **Services**: The dependency injection container for accessing services
+Create a bot in just a few lines:
 
 ```csharp
-public class UpdateContext
-{
-    public ITelegramBotClient Client { get; }
-    public IServiceProvider Services { get; }
-    public Update Update { get; set; }
-}
+var builder = new TelegramBotBuilder(args);
+
+var bot = builder.Build();
+
+bot.MapCommand("/start", () => "Welcome to TeleFrame!");
+
+bot.Run();
 ```
-
-### Update Pipeline
-
-Updates flow through a middleware pipeline that you can customize. Each middleware can:
-
-- Inspect or modify the update context
-- Handle the update or pass it to the next middleware
-- Perform logging, validation, or other cross-cutting concerns
-
-### State Management
-
-State is tracked per user, allowing you to build multi-step conversations and workflows.
-
-## 📖 Usage Guide
-
-### Basic Setup
-
-#### 1. Configure Options
-
-Create `appsettings.json`:
-
-```json
-{
-  "TelegramBot": {
-    "Token": "YOUR_BOT_TOKEN_HERE"
-  }
-}
-```
-
-#### 2. Initialize the Application
-
-```csharp
-using TeleFrame;
-using TeleFrame.ApplicationBuilder;
-
-var builder = new TelegramBotApplicationBuilder(args);
-
-// Add services
-builder.Services.AddLogging();
-
-var app = builder.Build();
-```
-
-#### 3. Register Handlers
-
-```csharp
-// Register handlers here
-app.MapUpdate(...);
-
-// Run the bot
-await app.RunAsync();
-```
-
-### Handling Updates
-
-Use `MapUpdate` to handle any type of update with a custom predicate:
-
-```csharp
-// Handle all message updates
-app.MapUpdate(
-    u => u.Update.Type == UpdateType.Message,
-    async (context, ct) =>
-    {
-        await context.Client.SendTextMessageAsync(
-            context.Update.Message!.Chat.Id,
-            "You sent a message!",
-            cancellationToken: ct);
-    });
-
-// Handle specific update types
-app.MapUpdate(UpdateType.CallbackQuery, async (context, ct) =>
-{
-    var callbackData = context.Update.CallbackQuery?.Data;
-    // Handle callback
-});
-```
-
-### Message Handlers
-
-Handle specific message types:
-
-```csharp
-// Handle text messages
-app.MapMessage(
-    m => m.Type == MessageType.Text,
-    async (context, ct) =>
-    {
-        var text = context.Update.Message!.Text;
-        await context.Client.SendTextMessageAsync(
-            context.Update.Message.Chat.Id,
-            $"You said: {text}",
-            cancellationToken: ct);
-    });
-
-// Handle photo messages
-app.MapMessage(MessageType.Photo, async (context, ct) =>
-{
-    var photo = context.Update.Message!.Photo!.Last();
-    await context.Client.SendTextMessageAsync(
-        context.Update.Message.Chat.Id,
-        $"Photo received! File ID: {photo.FileId}",
-        cancellationToken: ct);
-});
-
-// Handle voice messages
-app.MapMessage(MessageType.Voice, async (context, ct) =>
-{
-    var voice = context.Update.Message!.Voice!;
-    await context.Client.SendTextMessageAsync(
-        context.Update.Message.Chat.Id,
-        $"Voice received! Duration: {voice.Duration}s",
-        cancellationToken: ct);
-});
-
-// Handle document messages
-app.MapMessage(MessageType.Document, async (context, ct) =>
-{
-    var document = context.Update.Message!.Document!;
-    await context.Client.SendTextMessageAsync(
-        context.Update.Message.Chat.Id,
-        $"Document received: {document.FileName}",
-        cancellationToken: ct);
-});
-```
-
-### Command Handlers
-
-Handle bot commands like `/start`, `/help`, etc.:
-
-```csharp
-// Handle /start command
-app.MapMessage(
-    m => m.Text == "/start",
-    async (context, ct) =>
-    {
-        await context.Client.SendTextMessageAsync(
-            context.Update.Message!.Chat.Id,
-            "Welcome! Type /help for available commands.",
-            cancellationToken: ct);
-    });
-
-// Handle /help command
-app.MapMessage(
-    m => m.Text == "/help",
-    async (context, ct) =>
-    {
-        var helpText = """
-            Available commands:
-            /start - Start the bot
-            /help - Show this help message
-            /info - Get info about the bot
-            """;
-        
-        await context.Client.SendTextMessageAsync(
-            context.Update.Message!.Chat.Id,
-            helpText,
-            cancellationToken: ct);
-    });
-```
-
-### Voice Handlers
-
-Handle voice messages specifically:
-
-```csharp
-app.MapMessage(MessageType.Voice, async (context, ct) =>
-{
-    var voice = context.Update.Message!.Voice!;
-    var duration = voice.Duration;
-    
-    await context.Client.SendTextMessageAsync(
-        context.Update.Message.Chat.Id,
-        $"Voice message received!\nDuration: {duration} seconds",
-        cancellationToken: ct);
-});
-```
-
-### State Management
-
-Manage conversation state to build multi-step workflows:
-
-```csharp
-// Register state manager (built-in memory-based implementation)
-builder.Services.AddSingleton<IStateManager, MemoryStateManager>();
-
-// Use state in handlers
-app.MapMessage(
-    m => m.Text == "/register",
-    async (context, ct) =>
-    {
-        var stateManager = context.Services.GetRequiredService<IStateManager>();
-        stateManager.SetState("awaiting_name");
-        
-        await context.Client.SendTextMessageAsync(
-            context.Update.Message!.Chat.Id,
-            "What's your name?",
-            cancellationToken: ct);
-    });
-
-// Handle messages when in specific state
-app.MapMessage(
-    m => m.Type == MessageType.Text,
-    async (context, ct) =>
-    {
-        var stateManager = context.Services.GetRequiredService<IStateManager>();
-        
-        if (stateManager.State == "awaiting_name")
-        {
-            var name = context.Update.Message!.Text;
-            stateManager.SetState("awaiting_email");
-            
-            await context.Client.SendTextMessageAsync(
-                context.Update.Message.Chat.Id,
-                $"Nice to meet you, {name}! What's your email?",
-                cancellationToken: ct);
-        }
-    }).RequireState("awaiting_name");
-```
-
-### Middleware
-
-Add custom middleware to process updates before handlers:
-
-```csharp
-// Add logging middleware
-app.Use(next => async (context, ct) =>
-{
-    var logger = context.Services.GetRequiredService<ILogger<Program>>();
-    logger.LogInformation("Processing update: {UpdateId}", context.Update.Id);
-    
-    await next(context, ct);
-    
-    logger.LogInformation("Update processed: {UpdateId}", context.Update.Id);
-});
-
-// Add authentication middleware
-app.Use(next => async (context, ct) =>
-{
-    var allowedUsers = new[] { 123456789, 987654321 };
-    var userId = context.Update.Message?.From?.Id;
-    
-    if (userId.HasValue && allowedUsers.Contains((int)userId.Value))
-    {
-        await next(context, ct);
-    }
-    else
-    {
-        await context.Client.SendTextMessageAsync(
-            context.Update.Message!.Chat.Id,
-            "You don't have permission to use this bot.",
-            cancellationToken: ct);
-    }
-});
-```
-
-### Sending Results
-
-Use result classes for structured message sending:
-
-```csharp
-using TeleFrame.Results;
-
-// Send text message
-var result = new TextResult("Hello, World!", chatId: 123456789);
-await result.SendAsync(context, ct);
-
-// Send text message with reply
-var replyResult = new ReplyResult("Hello!", context.Update.Message!.MessageId);
-await replyResult.SendAsync(context, ct);
-
-// Custom message result
-var customResult = new MessageResult()
-{
-    // Configure message options
-    await customResult.SendAsync(context, ct);
-};
-```
-
-## ⚙️ Configuration
-
-TeleFrame uses Microsoft.Extensions.Configuration for all settings. Configure your bot token through:
-
-### appsettings.json
-
-```json
-{
-  "TelegramBot": {
-    "Token": "YOUR_BOT_TOKEN_HERE"
-  },
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft": "Warning"
-    }
-  }
-}
-```
-
-### Environment Variables
-
-```bash
-TelegramBot__Token=YOUR_BOT_TOKEN_HERE
-```
-
-### Programmatic Configuration
-
-```csharp
-var builder = new TelegramBotApplicationBuilder(args);
-
-builder.Configuration["TelegramBot:Token"] = "YOUR_BOT_TOKEN_HERE";
-```
-
-## 🔧 Advanced Features
-
-### Custom Handlers with Delegates
-
-Register handlers using simple delegate methods:
-
-```csharp
-async Task HandleTextMessage(UpdateContext context, CancellationToken ct)
-{
-    var text = context.Update.Message!.Text;
-    await context.Client.SendTextMessageAsync(
-        context.Update.Message.Chat.Id,
-        $"Echo: {text}",
-        cancellationToken: ct);
-}
-
-app.MapMessage(MessageType.Text, HandleTextMessage);
-```
-
-### Handler Chaining with Filters
-
-Build complex handler pipelines:
-
-```csharp
-var handler = app.MapMessage(m => m.Type == MessageType.Text, async (ctx, ct) =>
-{
-    await ctx.Client.SendTextMessageAsync(
-        ctx.Update.Message!.Chat.Id,
-        "Processing...",
-        cancellationToken: ct);
-})
-.Filter<ValidationMiddleware>()
-.Filter<AuthenticationMiddleware>();
-```
-
-### Dependency Injection
-
-Inject services into your handlers:
-
-```csharp
-builder.Services.AddScoped<IMyService, MyService>();
-
-app.MapMessage(MessageType.Text, async (context, ct) =>
-{
-    var service = context.Services.GetRequiredService<IMyService>();
-    var result = await service.ProcessAsync(context.Update.Message!.Text, ct);
-    
-    await context.Client.SendTextMessageAsync(
-        context.Update.Message.Chat.Id,
-        result,
-        cancellationToken: ct);
-});
-```
-
-### Async Processing
-
-TeleFrame uses a channel-based system for async update processing:
-
-```csharp
-// Configuration happens automatically in TelegramBotApplicationBuilder
-// By default, it uses Environment.ProcessorCount * 2 workers
-// and Environment.ProcessorCount * 2 * 4 queue capacity
-```
-
-## 📚 Examples
-
-### Echo Bot
-
-```csharp
-var builder = new TelegramBotApplicationBuilder(args);
-var app = builder.Build();
-
-app.MapMessage(m => m.Type == MessageType.Text, async (context, ct) =>
-{
-    var text = context.Update.Message!.Text;
-    await context.Client.SendTextMessageAsync(
-        context.Update.Message.Chat.Id,
-        $"Echo: {text}",
-        cancellationToken: ct);
-});
-
-await app.RunAsync();
-```
-
-### Interactive Survey Bot
-
-```csharp
-var builder = new TelegramBotApplicationBuilder(args);
-builder.Services.AddSingleton<IStateManager, MemoryStateManager>();
-var app = builder.Build();
-
-// Start survey
-app.MapMessage(m => m.Text == "/survey", async (context, ct) =>
-{
-    var stateManager = context.Services.GetRequiredService<IStateManager>();
-    stateManager.SetState("question_1");
-    
-    await context.Client.SendTextMessageAsync(
-        context.Update.Message!.Chat.Id,
-        "Q1: What's your favorite color?",
-        cancellationToken: ct);
-});
-
-// Handle answer 1
-app.MapMessage(m => m.Type == MessageType.Text, async (context, ct) =>
-{
-    var stateManager = context.Services.GetRequiredService<IStateManager>();
-    if (stateManager.State == "question_1")
-    {
-        var answer = context.Update.Message!.Text;
-        stateManager.SetState("question_2");
-        
-        await context.Client.SendTextMessageAsync(
-            context.Update.Message.Chat.Id,
-            "Q2: What's your favorite food?",
-            cancellationToken: ct);
-    }
-});
-
-await app.RunAsync();
-```
-
-### Image Processing Bot
-
-```csharp
-var builder = new TelegramBotApplicationBuilder(args);
-builder.Services.AddSingleton<IImageProcessor, ImageProcessor>();
-var app = builder.Build();
-
-app.MapMessage(MessageType.Photo, async (context, ct) =>
-{
-    var photo = context.Update.Message!.Photo!.Last();
-    var processor = context.Services.GetRequiredService<IImageProcessor>();
-    
-    // Download and process image
-    var fileInfo = await context.Client.GetFileAsync(photo.FileId, cancellationToken: ct);
-    var processedImage = await processor.ProcessAsync(fileInfo, ct);
-    
-    await context.Client.SendPhotoAsync(
-        context.Update.Message.Chat.Id,
-        new InputFileStream(processedImage, "processed.jpg"),
-        caption: "Processed image",
-        cancellationToken: ct);
-});
-
-await app.RunAsync();
-```
-
-## 🛠️ System Requirements
-
-- .NET 10.0 or higher
-- C# 12.0 or higher
-- A valid Telegram Bot Token (obtain from [@BotFather](https://t.me/botfather))
-
-## 📋 Dependencies
-
-- [Telegram.Bot](https://github.com/TelegramBots/Telegram.Bot) v22.7.6+
-- Microsoft.Extensions.DependencyInjection
-- Microsoft.Extensions.Configuration
-- Microsoft.Extensions.Hosting
-- Microsoft.Extensions.Caching.Memory
-- Microsoft.Extensions.Options.DataAnnotations
-- Microsoft.Extensions.Logging
-
-## 📝 License
-
-This project is licensed under the MIT License. See the [LICENCE](LICENCE) file for details.
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit pull requests or open issues for bugs and feature requests.
-
-## 📞 Support
-
-For issues, questions, or discussions, please visit the [GitHub Issues](https://github.com/M0BIN-V/TeleFrame/issues) page.
 
 ---
 
-**Made with ❤️ for Telegram Bot developers**
+
+# Dependency Injection
+
+TeleFrame integrates with Microsoft's Dependency Injection container.
+
+Register services:
+
+```csharp
+builder.Services.AddScoped<AdminsService>();
+```
+
+Inject them directly into handlers:
+
+```csharp
+bot.MapCommand("/admins", (AdminsService service) =>
+{
+    return string.Join(", ", service.Admins);
+});
+```
+
+No manual service resolution required.
+
+---
+
+# Commands
+
+Commands are the most common way to interact with users.
+
+## Returning Plain Text
+
+```csharp
+bot.MapCommand("/start", () =>
+{
+    return "Welcome to TeleFrame!";
+});
+```
+
+## Returning a Telegram Response
+
+```csharp
+bot.MapCommand("/hi", () =>
+{
+    return Results.Reply("Hello World");
+});
+```
+
+## Using UpdateContext
+
+```csharp
+bot.MapCommand("/help", (UpdateContext ctx) =>
+{
+    var username = ctx.Update.Message!.From!.Username;
+
+    return Results.Reply(
+        $"Hello {username}",
+        messageEffect: MessageEffects.Heart);
+});
+```
+
+---
+
+# Message Handlers
+
+Handle specific message types.
+
+```csharp
+bot.MapMessage(MessageType.Text, () =>
+{
+    return "Text message received";
+});
+```
+
+Example:
+
+```csharp
+bot.MapMessage(MessageType.Photo, () =>
+{
+    return "Nice photo!";
+});
+```
+
+---
+
+# Voice Messages
+
+Handle voice messages with a dedicated API.
+
+```csharp
+bot.MapVoice(() =>
+{
+    return Results.Reply("You sent a voice message!");
+});
+```
+
+---
+
+# Update Handlers
+
+Handle Telegram updates directly.
+
+Example:
+
+```csharp
+bot.MapUpdate(UpdateType.EditedMessage, (UpdateContext ctx) =>
+{
+    var message = ctx.Update.EditedMessage!;
+
+    return Results.Reply(
+        $"You edited: {message.Text}");
+});
+```
+
+Example for boost notifications:
+
+```csharp
+bot.MapUpdate(UpdateType.ChatBoost,
+    (UpdateContext ctx, AdminsService service) =>
+{
+    foreach (var admin in service.Admins)
+    {
+        ctx.Client.SendMessage(
+            admin.Id,
+            "Channel boosted");
+    }
+});
+```
+
+---
+
+# Middleware
+
+TeleFrame provides a middleware pipeline similar to ASP.NET Core.
+
+Middleware can inspect, modify, or stop processing updates.
+
+## Register Middleware
+
+```csharp
+builder.Services.AddScoped<BlackListMiddleware>();
+
+bot.Use<BlackListMiddleware>();
+```
+
+## Inline Middleware
+
+```csharp
+bot.Use(next => (context, ct) =>
+{
+    Console.WriteLine("Update received");
+
+    return next(context, ct);
+});
+```
+
+---
+
+# Custom Middleware
+
+```csharp
+public class BlackListMiddleware : IUpdateMiddleware
+{
+    public async Task InvokeAsync(
+        UpdateContext context,
+        UpdateDelegate next,
+        CancellationToken ct)
+    {
+        var blocked = false;
+
+        if (blocked)
+            return;
+
+        await next(context, ct);
+    }
+}
+```
+
+---
+
+# Filters
+
+Filters allow validation and authorization before executing handlers.
+
+## Creating a Filter
+
+```csharp
+public class OnlyAdminsFilter
+    : IUpdateHandlerFilter
+{
+    public Task InvokeAsync(
+        UpdateContext context,
+        UpdateHandlerFilterDelegate next,
+        CancellationToken ct)
+    {
+        var isAdmin = true;
+
+        if (isAdmin)
+            return next(context, ct);
+
+        return Task.CompletedTask;
+    }
+}
+```
+
+## Applying a Filter
+
+```csharp
+bot.MapCommand("/admins", () =>
+{
+    return "Admin panel";
+})
+.Filter<OnlyAdminsFilter>();
+```
+
+---
+
+# State Management
+
+TeleFrame includes a simple conversation state system.
+
+Perfect for multi-step user interactions.
+
+---
+
+## Set State
+
+```csharp
+bot.MapCommand("/verify",
+    (IStateManager stateManager) =>
+{
+    stateManager.SetState(
+        "awaiting_phone_number");
+
+    return "Please enter your phone number.";
+});
+```
+
+---
+
+## Require State
+
+```csharp
+bot.MapMessage(MessageType.Text,
+    (UpdateContext ctx,
+     IStateManager stateManager) =>
+{
+    var input = ctx.Update.Message!.Text!;
+
+    stateManager.ClearState();
+
+    return "Verification complete.";
+})
+.RequireState("awaiting_phone_number");
+```
+
+---
+
+## Clear State
+
+```csharp
+stateManager.ClearState();
+```
+
+---
+
+# UpdateContext
+
+`UpdateContext` gives you access to:
+
+* Telegram Client
+* Current Update
+* User Information
+* Chat Information
+* Services
+* State Management
+* Request Context
+
+Example:
+
+```csharp
+bot.MapCommand("/me", (UpdateContext ctx) =>
+{
+    var user = ctx.Update.Message!.From!;
+
+    return Results.Reply(
+        $"Hello {user.FirstName}");
+});
+```
+
+---
+
+# Results API
+
+Return rich responses using the `Results` helper.
+
+```csharp
+Results.Reply("Hello");
+```
+
+```csharp
+Results.Reply(
+    "Welcome!",
+    messageEffect: MessageEffects.Heart);
+```
+
+---
+
+# Logging
+
+Enable update logging with a single line.
+
+Register:
+
+```csharp
+builder.Services.AddUpdateLogging();
+```
+
+Use:
+
+```csharp
+bot.UseUpdateLogging();
+```
+
+---
+
+# Example Application
+
+```csharp
+var builder = new TelegramBotBuilder(args);
+
+builder.Services.AddScoped<AdminsService>();
+
+var bot = builder.Build();
+
+bot.MapCommand("/start",
+    () => "Welcome to TeleFrame!");
+
+bot.MapVoice(
+    () => "Voice message received!");
+
+bot.MapCommand("/verify",
+    (IStateManager stateManager) =>
+{
+    stateManager.SetState("awaiting_phone");
+
+    return "Enter your phone number.";
+});
+
+bot.Run();
+```
+
+---
+
+# Why TeleFrame?
+
+Telegram bot development often starts simple but quickly becomes difficult to maintain as your bot grows.
+
+TeleFrame solves this by bringing proven ASP.NET Core concepts to Telegram bots:
+
+* Routing
+* Middleware
+* Dependency Injection
+* Filters
+* State Management
+* Clean Architecture Friendly
+
+You focus on business logic.
+
+TeleFrame handles the plumbing.
+
+---
+
+# Roadmap
+
+* [ ] Callback Query Routing
+* [ ] Inline Query Support
+* [ ] Webhook Hosting
+* [ ] Background Jobs
+* [ ] Localization Support
+* [ ] Built-in Authorization
+
+---
+
+# Contributing
+
+Contributions, ideas, bug reports, and pull requests are welcome.
+
+If you find TeleFrame useful, consider giving the repository a ⭐.
+
+---
+
+# License
+
+Licensed under the MIT License.
