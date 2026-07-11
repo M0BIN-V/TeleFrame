@@ -43,6 +43,7 @@ public class TelegramBotBuilder : IHostApplicationBuilder
 
         _hostBuilder.Configuration.AddJsonFile(configFileName, true, true);
         _hostBuilder.Configuration.AddUserSecrets(System.Reflection.Assembly.GetEntryAssembly()!);
+        _hostBuilder.Configuration.AddEnvironmentVariables();
 
         RegisterServices();
     }

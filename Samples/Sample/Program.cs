@@ -29,7 +29,6 @@ bot.Use(next => (context, ct) =>
 
 // Send a simple text message response
 bot.MapCommand("/start", () => "Welcome to TeleFrame bot!");
-
 // Reply to a command
 bot.MapCommand("/hi", () => Results.Reply("Hello world"));
 
@@ -92,4 +91,27 @@ bot.MapMessage(MessageType.Text, (UpdateContext ctx, IStateManager stateManager)
     })
     .RequireState("awaiting_phone_number");
 
+bot.MapCommand("/admins", (AdminsService service) =>
+    {
+        var admins = "";
+        foreach (var admin in service.Admins) admins += admin.Username + " ";
+
+        return admins;
+    })
+    .Filter<OnlyAdminsFilter>();
+
 bot.Run();
+
+public class OnlyAdminsFilter : IUpdateHandlerFilter
+{
+    public Task InvokeAsync(UpdateContext context, UpdateHandlerFilterDelegate next, CancellationToken ct)
+    {
+        // validate admin  example:
+        var isAdmin = true;
+
+        if (isAdmin)
+            return next(context, ct);
+
+        return Task.CompletedTask;
+    }
+}
