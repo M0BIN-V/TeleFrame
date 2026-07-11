@@ -22,6 +22,8 @@ bot.MapCommand("/start", () => "Welcome to TeleFrame!");
 
 - [📦 Installation](#Installation)
 - [🚀 Quick Start](#Quick-Start)
+  - [Configuration](#configuration)
+  - [Create Bot](#create-a-bot-in-just-a-few-lines)
 - [💉 Dependency Injection](#Dependency-Injection)
 - [⌨️ Commands](#Commands)
     - [Returning Plain Text](#returning-plain-text)
@@ -64,7 +66,44 @@ dotnet add package TeleFrame
 
 # Quick Start
 
-Create a bot in just a few lines:
+## Configuration
+
+TeleFrame loads the bot token from the application configuration. By default, the framework looks for a `botConfig.json` file in the application root.
+
+### botConfig.json
+
+Create a `botConfig.json` file next to your application's executable:
+
+```json
+{
+  "Token": "YOUR_BOT_TOKEN"
+}
+```
+
+### Using User Secrets (Recommended for Development)
+
+Instead of storing your bot token inside a configuration file, you can use .NET User Secrets:
+
+```bash
+dotnet user-secrets init
+dotnet user-secrets set "Token" "YOUR_BOT_TOKEN"
+```
+
+TeleFrame automatically loads User Secrets from the entry assembly, allowing you to keep sensitive credentials out of source control.
+
+### Configuration Priority
+
+Configuration sources are loaded in the following order:
+
+1. `botConfig.json`
+2. .NET User Secrets
+
+If the same key exists in multiple sources, the value from the last loaded source is used.
+
+> **Important:** Never commit real bot tokens to a public repository. For local development, User Secrets are the recommended approach.
+
+
+### Create a bot in just a few lines:
 
 ```csharp
 var builder = new TelegramBotBuilder(args);
