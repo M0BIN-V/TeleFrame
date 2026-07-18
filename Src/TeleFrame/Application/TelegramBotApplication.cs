@@ -110,10 +110,10 @@ public partial class TelegramBotApplication : IHost
     ///     A completed <see cref="Task" /> since the underlying host lifecycle is gracefully controlled via shutdown
     ///     signals.
     /// </returns>
-    public Task StopAsync(CancellationToken cancellationToken = new())
+    public async Task StopAsync(CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Telegram bot stopping...");
-        return Task.CompletedTask;
+        await _host.StopAsync(cancellationToken);
     }
 
     /// <summary>
